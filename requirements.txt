@@ -1,0 +1,4 @@
+1.python
+2.streamlit
+3.opencv
+4.sentiment analysis
