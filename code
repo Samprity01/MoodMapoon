@@ -1,0 +1,163 @@
+Full code:
+
+# Dictionary of videos
+import numpy as np
+import cv2
+import streamlit as st
+from tensorflow import keras
+from keras.models import model_from_json, load_model # Import
+load_model here
+from keras.preprocessing.image import img_to_array
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase,
+RTCConfiguration, VideoProcessorBase, WebRtcMode
+import time
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.image import img_to_array
+from tensorflow.keras.preprocessing.image import load_img
+RTC_CONFIGURATION = RTCConfiguration({"iceServers": [{"urls":
+["stun:stun.l.google.com:19302"]}]})
+emotion_model=load_model('/content/fer2013_mini_XCEPTION.102-
+0.66.hdf5')
+emotion_dict = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4:
+'Sad', 5: 'Surprise', 6: 'Neutral'}
+def emotion_analysis(VideoTransformerBase):
+face_cascade_path = "haarcascade_frontalface_default.xml"
+face_cap = cv2.CascadeClassifier(face_cascade_path)
+if face_cap.empty():
+print("Error loading face detection model. Check the file path.")
+return
+video_cap = cv2.VideoCapture(0)
+if not video_cap.isOpened():
+print("Error opening video stream or file")
+exit()
+start_time=time.time()
+watch_duration=60
+smile_detected=False
+while time.time()-start_time<watch_duration:
+ret, video_data = video_cap.read()
+if not ret:
+print("Can't receive frame (stream end?). Exiting ...")
+break
+col = cv2.cvtColor(video_data, cv2.COLOR_BGR2GRAY)
+faces = face_cap.detectMultiScale(
+col,
+scaleFactor=1.1,
+minNeighbors=5,
+minSize=(30, 30),
+flags=cv2.CASCADE_SCALE_IMAGE
+)
+for (x, y, w, h) in faces:
+gray = col[y:y + h, x:x + w]
+gray = cv2.resize(gray, (48, 48))
+gray = gray.astype('float') / 255.0
+gray = img_to_array(gray)
+gray = np.expand_dims(gray, axis=0)
+cv2.rectangle(video_data, (x, y), (x + w, y + h), (0, 255,
+0), 2)
+prediction=emotion_model.predict(gray)
+label=np.argmax(prediction)
+emotion=emotion_dict[label]
+cv2.putText(video_data,label,(x,y),cv2.FONT_HERSHEY_SIMPLEX,1
+,(0,255,0),2)
+print(label)
+if emotion=='Happy':
+smile_detected=True
+break
+else:
+smile_detected=False
+cv2.imshow("ASD",video_data)
+if cv2.waitKey(10) == ord("a"):
+break
+if time.time()-start_time>watch_duration:
+break
+video_cap.release()
+cv2.destroyAllWindows()
+if smile_detected:
+print("Smile Detected:No Autism")
+else:
+print("No Smile Detected:Here it is autism child")
+emotion_analysis(None)
+#choices=st.sidebar.selectbox("Select a video", list(videos.keys()))
+# video_url = videos[choices]
+#st.video(video_url)
+# Function to redirect to a different page
+videos = {
+"Cats": "https://www.youtube.com/embed/J---aiyznGQ",
+"Dogs": "https://www.youtube.com/embed/3GRSbr0EYYU",
+"Babies": "https://www.youtube.com/embed/L5IAQ9XwK5Y",
+"Pranks": "https://www.youtube.com/embed/CIaWoBlP5yU",
+"Skits": "https://www.youtube.com/embed/9lG5oSDlnLM"
+}
+def redirect(url):
+st.session_state.page = url
+def registration_page():
+st.title("Registration")
+st.header("Create Your Account")
+username = st.text_input("Username")
+email = st.text_input("Email")
+password = st.text_input("Password", type="password")
+if st.button("Submit"):
+st.session_state.username = username
+st.session_state.email = email
+st.session_state.password = password
+redirect("login")
+def login_page():
+st.title("Login")
+st.header("Login to Your Account")
+username = st.text_input("Username")
+password = st.text_input("Password", type="password")
+if st.button("Submit"):
+if username == st.session_state.get('username') and password ==
+st.session_state.get('password'):
+redirect("main")
+else:
+st.error("Invalid username or password")
+def main_page():
+st.title("Welcome to MoodMapoon")
+st.subheader("Entertainment encompasses a wide range of activities
+and experiences that bring joy, relaxation, and amusement to people. It
+includes movies, music, sports, video games, theater, and more.
+Entertainment serves as an escape from daily life, fostering
+creativity, cultural exchange, and emotional connection among
+individuals and communities.")
+st.write("Okay, Let's come with us")
+st.radio("What is the capital of India?", ["Mumbai", "New Delhi",
+"Kolkata"])
+video_choice = st.selectbox("Select a video to watch",
+list(videos.keys()))
+st.video(videos[video_choice])
+st.write("Click on start to use webcam and detect your face
+emotion")
+webrtc_streamer(key="example",mode=WebRtcMode.SENDRECV,rtc_configur
+ation=RTC_CONFIGURATION,video_processor_factory=emotion_analysis)
+def main():
+if "page" not in st.session_state:
+st.session_state.page = "registration"
+if st.session_state.page == "registration":
+registration_page()
+elif st.session_state.page == "login":
+login_page()
+elif st.session_state.page == "main":
+main_page()
+if __name__ == "__main__":
+main()
+required libraries, modules:
+import numpy as np
+import cv2
+import streamlit as st
+from tensorflow import keras
+from keras.models import model_from_json, load_model # Import
+load_model here
+from keras.preprocessing.image import img_to_array
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase,
+RTCConfiguration, VideoProcessorBase, WebRtcMode
+import time
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.image import img_to_array
+from tensorflow.keras.preprocessing.image import load_img
+How to run the streamlit app?
+! pip install streamlit -q
+!wget -q -O - ipv4.icanhazip.com
+! streamlit run /content/app.py & npx localtunnel --port 8501
